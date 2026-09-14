@@ -184,6 +184,22 @@
   .type-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
   .type-toggle:has(input:checked) { background: var(--accent); color: #fff; }
 
+  .tag-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent-soft); color: var(--accent-dark);
+    border-radius: 20px; padding: 6px 8px 6px 12px; font-size: 13px; font-weight: 600;
+  }
+  .tag-chip button {
+    border: none; background: rgba(0,0,0,0.08); color: inherit;
+    width: 18px; height: 18px; border-radius: 50%; font-size: 12px; line-height: 1; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .quick-tag-btn {
+    border: none; background: var(--accent-soft); color: var(--accent-dark);
+    border-radius: 20px; padding: 6px 12px; font-size: 12.5px; font-weight: 600;
+  }
+  .quick-tag-btn:active { background: var(--accent); color: #fff; }
+
   table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   table.data-table th, table.data-table td { text-align: left; padding: 6px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
   table.data-table th { color: var(--ink-soft); font-weight: 600; }
@@ -437,7 +453,7 @@
       <!-- ---------- Settings ---------- -->
       <div class="page" id="page-settings" hidden>
         <div class="page-title">設定</div>
-        <div class="dashboard-fill" style="justify-content:center;">
+        <div class="dashboard-fill">
           <div class="card">
             <h2>每日液體攝取上限</h2>
             <div class="row" style="align-items:flex-end;">
@@ -445,6 +461,17 @@
               <button class="btn primary" id="save-settings-btn">儲存</button>
             </div>
             <div id="settings-save-result" style="font-size:12px;color:var(--ink-soft);margin-top:6px;"></div>
+          </div>
+
+          <div class="card">
+            <h2>液體攝取項目標籤</h2>
+            <p style="font-size:11.5px;color:var(--ink-soft);margin:-6px 0 10px;">維護常喝的液體項目，之後記錄喝水時可以快速點選帶入，不用每次手打。</p>
+            <div id="fluid-item-tags" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+            <form id="add-fluid-item-tag-form" class="row">
+              <input type="text" id="new-fluid-item-tag-input" placeholder="新增項目名稱，例如：湯"
+                style="flex:1;min-width:140px;height:37px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;font-size:13px;color:var(--ink);">
+              <button type="submit" class="btn primary small">新增標籤</button>
+            </form>
           </div>
         </div>
       </div>
@@ -464,6 +491,7 @@
       <div class="modal-sheet-header"><h3 id="fluid-modal-title">記錄喝水</h3><button class="modal-close-btn" id="fluid-close-btn">✕</button></div>
       <div class="field"><label>時間</label><input type="datetime-local" id="fluid-at"></div>
       <div class="field"><label>喝了什麼</label><input type="text" id="fluid-item" placeholder="例如：白開水、湯"></div>
+      <div class="row" id="fluid-item-quick-tags" style="margin:-4px 0 10px;"></div>
       <div class="field"><label>毫升數（cc）</label><input type="number" id="fluid-amount" min="0" step="10"></div>
       <div class="field"><label>備註（選填）</label><input type="text" id="fluid-note"></div>
       <div class="row" style="justify-content:space-between;margin-top:10px;">
@@ -627,6 +655,7 @@
   let bloodPressures = [];
   let weights = [];
   let careProfile = {};
+  let fluidItemTags = [];
   let currentPage = "dashboard";
   let fluidTrendChart = null, bpTrendChart = null, weightTrendChart = null;
 
@@ -700,7 +729,7 @@
       .finally(() => { btn.disabled = false; });
   });
 
-  let unsubFluids = null, unsubBp = null, unsubWeights = null, unsubCareProfile = null;
+  let unsubFluids = null, unsubBp = null, unsubWeights = null, unsubCareProfile = null, unsubFluidItemTags = null;
   function attachListeners() {
     unsubFluids = db.collection("fluids").onSnapshot(snap => {
       fluids = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
@@ -721,6 +750,11 @@
       careProfile = doc.exists ? doc.data() : {};
       renderCurrentPage();
     }, err => console.error("careProfile listener error", err));
+    unsubFluidItemTags = db.collection("settings").doc("fluidItemTags").onSnapshot(doc => {
+      fluidItemTags = (doc.exists && doc.data().tags) || [];
+      renderCurrentPage();
+      renderFluidItemQuickTags(); // keep an already-open fluid modal's pills in sync too
+    }, err => console.error("fluidItemTags listener error", err));
   }
   function renderCurrentPage() { showPage(currentPage); }
 
@@ -737,7 +771,8 @@
       if (unsubBp) unsubBp();
       if (unsubWeights) unsubWeights();
       if (unsubCareProfile) unsubCareProfile();
-      fluids = []; bloodPressures = []; weights = []; careProfile = {};
+      if (unsubFluidItemTags) unsubFluidItemTags();
+      fluids = []; bloodPressures = []; weights = []; careProfile = {}; fluidItemTags = [];
     }
   });
 
@@ -777,6 +812,17 @@
   // ===================== Quick-add: fluid =====================
   const fluidModal = document.getElementById("fluid-modal");
   let editingFluidId = null;
+  function renderFluidItemQuickTags() {
+    const wrap = document.getElementById("fluid-item-quick-tags");
+    if (!wrap) return;
+    wrap.innerHTML = fluidItemTags.map(t =>
+      '<button type="button" class="quick-tag-btn" data-tag="' + t.replace(/"/g, "&quot;") + '">' + t + "</button>"
+    ).join("");
+    wrap.querySelectorAll(".quick-tag-btn").forEach(btn => {
+      btn.addEventListener("click", () => { document.getElementById("fluid-item").value = btn.dataset.tag; });
+    });
+  }
+
   function openFluidModal(record) {
     editingFluidId = record ? record.id : null;
     document.getElementById("fluid-modal-title").textContent = record ? "編輯液體攝取紀錄" : "記錄喝水";
@@ -785,6 +831,7 @@
     document.getElementById("fluid-item").value = record ? (record.item || "") : "";
     document.getElementById("fluid-amount").value = record && record.amountMl != null ? record.amountMl : "";
     document.getElementById("fluid-note").value = record ? (record.note || "") : "";
+    renderFluidItemQuickTags();
     openModal(fluidModal);
   }
   document.getElementById("quick-fluid-btn").addEventListener("click", () => openFluidModal(null));
@@ -1095,8 +1142,34 @@
   }
 
   // ===================== Settings page =====================
+  function renderFluidItemTagChips() {
+    const wrap = document.getElementById("fluid-item-tags");
+    if (!fluidItemTags.length) {
+      wrap.innerHTML = '<span style="font-size:12.5px;color:var(--ink-faint);">還沒有任何標籤</span>';
+      return;
+    }
+    wrap.innerHTML = fluidItemTags.map(t =>
+      '<span class="tag-chip">' + t + '<button type="button" data-tag="' + t.replace(/"/g, "&quot;") + '">✕</button></span>'
+    ).join("");
+    wrap.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const next = fluidItemTags.filter(t => t !== btn.dataset.tag);
+        db.collection("settings").doc("fluidItemTags").set({ tags: next }, { merge: true });
+      });
+    });
+  }
+  document.getElementById("add-fluid-item-tag-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const input = document.getElementById("new-fluid-item-tag-input");
+    const val = input.value.trim();
+    if (!val || fluidItemTags.includes(val)) { input.value = ""; return; }
+    db.collection("settings").doc("fluidItemTags").set({ tags: [...fluidItemTags, val] }, { merge: true });
+    input.value = "";
+  });
+
   function renderSettingsPage() {
     document.getElementById("daily-fluid-limit").value = dailyFluidLimit();
+    renderFluidItemTagChips();
   }
   document.getElementById("save-settings-btn").addEventListener("click", () => {
     const limitRaw = parseFloat(document.getElementById("daily-fluid-limit").value);
