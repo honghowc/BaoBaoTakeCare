@@ -44,7 +44,12 @@
   #app {
     max-width: 1080px;
     margin: 0 auto;
-    min-height: 100dvh;
+    /* svh (not dvh) — sized to the viewport with the browser's toolbar fully
+       expanded, i.e. the guaranteed-visible minimum. Using dvh here made the
+       page assume the toolbar's already-collapsed (larger) height on first
+       paint, leaving a gap under the fixed bottom-nav until a scroll forced
+       the browser to recompute and the toolbar actually collapsed. */
+    min-height: 100svh;
     background: transparent;
     display: flex;
     flex-direction: column;
