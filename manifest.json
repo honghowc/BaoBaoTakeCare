@@ -1,0 +1,8 @@
+{
+  "name": "寶子照護日記 BaoBaoTakeCare",
+  "short_name": "寶子照護",
+  "display": "standalone",
+  "start_url": ".",
+  "background_color": "#F5F3EC",
+  "theme_color": "#5C8D76"
+}

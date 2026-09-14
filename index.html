@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>寶子照護日記 BaoBaoTakeCare</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="寶子照護">
+<meta name="application-name" content="寶子照護">
+<meta name="theme-color" content="#5C8D76">
+<link rel="manifest" href="manifest.json">
+
+<style>
+  :root {
+    /* Calm, legible care-app palette — sage green + soft blue, no decoration. */
+    --bg: #F5F3EC;
+    --paper: #FFFFFF;
+    --ink: #2E3B36;
+    --ink-soft: #6B7A74;
+    --ink-faint: #B7C2BC;
+    --accent: #5C8D76;
+    --accent-dark: #436B56;
+    --accent-soft: #E3EFE8;
+    --blue: #4A7FA5;
+    --blue-soft: #E5EEF4;
+    --red: #C0504D;
+    --red-soft: #F8E6E5;
+    --line: #E4E0D5;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, select, textarea { font: inherit; }
+  button { cursor: pointer; }
+  #app {
+    max-width: 1080px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  [hidden] { display: none !important; }
+
+  /* ---------- Login ---------- */
+  #page-login {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .login-card {
+    background: var(--paper);
+    border-radius: 16px;
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    text-align: center;
+  }
+  .login-card h1 { font-size: 20px; margin: 0 0 4px; color: var(--accent-dark); }
+  .login-card p.sub { color: var(--ink-soft); font-size: 13px; margin: 0 0 20px; }
+  .login-card input {
+    width: 100%; padding: 11px 12px; margin-bottom: 10px;
+    border: 1px solid var(--line); border-radius: 10px; font-size: 15px;
+  }
+  .login-card button.primary {
+    width: 100%; padding: 12px; margin-top: 6px;
+    border: none; border-radius: 10px; background: var(--accent); color: #fff;
+    font-weight: 700; font-size: 15px;
+  }
+  .login-card button.primary:active { background: var(--accent-dark); }
+  .login-error { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 16px; }
+
+  /* ---------- Header / Nav ---------- */
+  .app-header {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--paper); border-bottom: 1px solid var(--line);
+    padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .app-header h1 { margin: 0; font-size: 16px; font-weight: 700; color: var(--accent-dark); }
+  .app-header .user-email { font-size: 11px; color: var(--ink-faint); }
+  .logout-btn {
+    border: none; background: var(--accent-soft); color: var(--accent-dark);
+    font-size: 12px; font-weight: 700; padding: 7px 12px; border-radius: 20px;
+  }
+
+  main { flex: 1; overflow-y: auto; padding: 16px 16px 88px; }
+  .page-title { font-size: 15px; font-weight: 700; margin: 4px 0 14px; color: var(--ink); }
+
+  .bottom-nav {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: 0; width: 100%; max-width: 1080px;
+    background: var(--paper); border-top: 1px solid var(--line);
+    display: flex; padding-bottom: env(safe-area-inset-bottom);
+    z-index: 6;
+  }
+  .bottom-nav button {
+    flex: 1; border: none; background: none; padding: 10px 4px 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    color: var(--ink-faint); font-size: 11px; font-weight: 600;
+  }
+  .bottom-nav button .icon { font-size: 18px; }
+  .bottom-nav button.active { color: var(--accent-dark); }
+
+  /* ---------- Cards / shared ---------- */
+  .card {
+    background: var(--paper); border-radius: 14px; padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 14px;
+  }
+  .card h2 { margin: 0 0 12px; font-size: 14px; font-weight: 700; color: var(--accent-dark); }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat-tile { background: var(--paper); border-radius: 14px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .stat-tile .label { font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+  .stat-tile .value { font-size: 22px; font-weight: 700; }
+  .stat-tile .delta { font-size: 11px; margin-top: 4px; }
+  .delta.up { color: var(--accent-dark); }
+  .delta.down { color: var(--red); }
+  .delta.info { color: var(--blue); }
+  .warn-banner {
+    background: #FFF8E1; border: 1px solid #FFECB3; color: #8A6D00;
+    border-radius: 10px; padding: 10px 12px; font-size: 12.5px; margin-bottom: 14px;
+  }
+  .btn { border: none; border-radius: 10px; padding: 9px 14px; font-size: 13px; font-weight: 700; }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.secondary { background: var(--accent-soft); color: var(--accent-dark); }
+  .btn.danger { background: var(--red-soft); color: var(--red); }
+  .btn.small { padding: 5px 10px; font-size: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-soft); }
+  .field input, .field select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; color: var(--ink); }
+  .field select, .field input { height: 37px; }
+  .checkbox-inline {
+    display: flex; align-items: center; gap: 6px; padding: 8px 0; font-size: 13px; color: var(--ink); cursor: pointer; white-space: nowrap;
+  }
+  .checkbox-inline input[type="checkbox"] { width: 16px; height: 16px; flex: none; padding: 0; }
+
+  /* Pill-style radio buttons used for blood-pressure context. */
+  .type-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 9px 10px; border-radius: 20px; background: var(--accent-soft); color: var(--ink-soft);
+    font-size: 13px; font-weight: 700; cursor: pointer; flex: 1; text-align: center;
+  }
+  .type-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .type-toggle:has(input:checked) { background: var(--accent); color: #fff; }
+
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.data-table th, table.data-table td { text-align: left; padding: 6px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.data-table th { color: var(--ink-soft); font-weight: 600; }
+  table.data-table td.note-cell { white-space: normal; max-width: 200px; word-break: break-word; }
+  table.data-table tfoot td {
+    font-weight: 700; border-top: 2px solid var(--line); border-bottom: none; background: var(--bg);
+  }
+  .table-scroll { overflow-x: auto; }
+
+  .records-list-desktop { }
+  .records-list-mobile { display: none; }
+  @media (max-width: 640px) {
+    .records-list-desktop { display: none; }
+    .records-list-mobile { display: block; }
+  }
+
+  .record-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+  .record-card .record-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .record-card .record-card-time { font-size: 12px; color: var(--ink-soft); }
+  .record-card .record-card-summary { font-size: 13.5px; font-weight: 600; margin-top: 2px; }
+  .record-card .record-card-note { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+  .record-card .record-card-actions { display: flex; gap: 8px; margin-top: 8px; }
+
+  .empty-hint { color: var(--ink-faint); font-size: 13px; text-align: center; padding: 24px 0; }
+  .chart-wrap { position: relative; height: 220px; }
+
+  .quick-add-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .quick-add-btn {
+    border: none; background: var(--accent-soft); color: var(--accent-dark);
+    border-radius: 14px; padding: 14px 6px; font-size: 12px; font-weight: 700;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .quick-add-btn .quick-add-icon { font-size: 24px; }
+  .quick-add-btn:nth-child(2) { background: var(--blue-soft); color: #2C5A78; }
+
+  .progress-track { background: var(--accent-soft); border-radius: 8px; height: 12px; overflow: hidden; }
+  .progress-fill { background: var(--accent); height: 100%; }
+  .progress-fill.over-limit { background: var(--red); }
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 20;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .modal-sheet {
+    background: var(--paper); width: 100%; max-width: 480px; border-radius: 16px 16px 0 0;
+    padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+    max-height: 85vh; overflow-y: auto;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  }
+  body.modal-open { position: fixed; left: 0; right: 0; overflow: hidden; width: 100%; }
+  .modal-sheet h3 { margin: 0 0 12px; font-size: 15px; }
+  .modal-sheet-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px;
+  }
+  .modal-sheet-header h3 { margin: 0; }
+  .modal-close-btn {
+    border: none; background: var(--accent-soft); color: var(--ink-soft); width: 30px; height: 30px; border-radius: 50%;
+    font-size: 16px; line-height: 1; flex: none; cursor: pointer;
+  }
+  .modal-sheet .field { margin-bottom: 10px; }
+  .modal-sheet .field input, .modal-sheet .field select { width: 100%; }
+  .modal-sheet .row.toggle-row { margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== Login ===================== -->
+  <div id="page-login">
+    <div class="login-card">
+      <h1>寶子照護日記</h1>
+      <p class="sub">登入以記錄液體攝取／血壓／體重</p>
+      <form id="login-form">
+        <input type="email" id="login-email" placeholder="Email" autocomplete="username">
+        <input type="password" id="login-password" placeholder="密碼" autocomplete="current-password">
+        <button type="submit" class="primary" id="login-btn">登入</button>
+      </form>
+      <div class="login-error" id="login-error"></div>
+    </div>
+  </div>
+
+  <!-- ===================== App shell (shown after login) ===================== -->
+  <div id="app-shell" hidden>
+    <div class="app-header">
+      <div>
+        <h1>寶子照護日記</h1>
+        <div class="user-email" id="user-email"></div>
+      </div>
+      <div class="row" style="gap:6px;">
+        <button class="logout-btn" id="refresh-btn" title="重新整理" aria-label="重新整理">🔄</button>
+        <button class="logout-btn" id="change-password-btn">變更密碼</button>
+        <button class="logout-btn" id="logout-btn">登出</button>
+      </div>
+    </div>
+
+    <main>
+      <!-- ---------- Dashboard ---------- -->
+      <div class="page" id="page-dashboard">
+        <div class="page-title">儀表板</div>
+
+        <div class="card">
+          <h2>今日總攝水量</h2>
+          <div id="fluid-goal-content"></div>
+        </div>
+
+        <div class="stat-grid" id="status-grid"></div>
+
+        <div class="card">
+          <h2>快速記錄</h2>
+          <div class="quick-add-grid">
+            <button class="quick-add-btn" id="quick-fluid-btn"><span class="quick-add-icon">💧</span><span>喝水</span></button>
+            <button class="quick-add-btn" id="quick-bp-btn"><span class="quick-add-icon">🩺</span><span>血壓</span></button>
+            <button class="quick-add-btn" id="quick-weight-btn"><span class="quick-add-icon">⚖️</span><span>體重</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- Records ---------- -->
+      <div class="page" id="page-records" hidden>
+        <div class="page-title">記錄</div>
+        <div class="card">
+          <div class="row" style="margin-bottom:10px;">
+            <div class="field"><label>類型</label>
+              <select id="filter-type">
+                <option value="">全部</option>
+                <option value="fluid">液體攝取</option>
+                <option value="bp">血壓</option>
+                <option value="weight">體重</option>
+              </select>
+            </div>
+            <div class="field"><label>開始日期</label><input type="date" id="filter-start"></div>
+            <div class="field"><label>結束日期</label><input type="date" id="filter-end"></div>
+          </div>
+          <div class="table-scroll records-list-desktop">
+            <table class="data-table" id="records-table">
+              <thead><tr><th>時間</th><th>類型</th><th>內容</th><th>備註</th><th>紀錄人</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="records-list-mobile" class="records-list-mobile"></div>
+          <div class="empty-hint" id="records-empty-hint" hidden>目前篩選條件下沒有任何紀錄。</div>
+        </div>
+      </div>
+
+      <!-- ---------- Analysis ---------- -->
+      <div class="page" id="page-analysis" hidden>
+        <div class="page-title">分析</div>
+        <div class="card">
+          <div class="row" style="margin-bottom:12px;align-items:flex-end;">
+            <div class="field">
+              <label>統計區間</label>
+              <select id="analysis-granularity-select">
+                <option value="day" selected>每天</option>
+                <option value="week">每週</option>
+                <option value="month">每月</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>最下方合計方式</label>
+              <select id="analysis-mode-select">
+                <option value="average" selected>平均</option>
+                <option value="sum">加總</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table" id="analysis-table">
+              <thead><tr><th>期間</th><th>液體總量(cc)</th><th>血壓平均</th><th>體重(kg)</th></tr></thead>
+              <tbody></tbody>
+              <tfoot id="analysis-totals-foot"></tfoot>
+            </table>
+          </div>
+          <div class="empty-hint" id="analysis-empty-hint" hidden>還沒有足夠的紀錄可以分析。</div>
+        </div>
+
+        <div class="card">
+          <h2>液體攝取趨勢（虛線為每日上限）</h2>
+          <div class="chart-wrap"><canvas id="fluid-trend-chart"></canvas></div>
+        </div>
+        <div class="card">
+          <h2>血壓趨勢</h2>
+          <div class="chart-wrap"><canvas id="bp-trend-chart"></canvas></div>
+        </div>
+        <div class="card">
+          <h2>體重趨勢</h2>
+          <div class="chart-wrap"><canvas id="weight-trend-chart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ---------- Settings ---------- -->
+      <div class="page" id="page-settings" hidden>
+        <div class="page-title">設定</div>
+        <div class="card">
+          <h2>每日液體攝取上限</h2>
+          <div class="field"><label>上限（毫升 cc）</label><input type="number" id="daily-fluid-limit" min="0" step="10"></div>
+          <button class="btn primary" id="save-settings-btn">儲存</button>
+          <div id="settings-save-result" style="font-size:12px;color:var(--ink-soft);margin-top:6px;"></div>
+        </div>
+      </div>
+    </main>
+
+    <div class="bottom-nav">
+      <button data-page="dashboard" class="active"><span class="icon">🏠</span>儀表板</button>
+      <button data-page="records"><span class="icon">📋</span>記錄</button>
+      <button data-page="analysis"><span class="icon">📈</span>分析</button>
+      <button data-page="settings"><span class="icon">⚙️</span>設定</button>
+    </div>
+  </div>
+
+  <!-- ---------- Fluid intake modal ---------- -->
+  <div class="modal-backdrop" id="fluid-modal" hidden>
+    <div class="modal-sheet">
+      <div class="modal-sheet-header"><h3 id="fluid-modal-title">記錄喝水</h3><button class="modal-close-btn" id="fluid-close-btn">✕</button></div>
+      <div class="field"><label>時間</label><input type="datetime-local" id="fluid-at"></div>
+      <div class="field"><label>喝了什麼</label><input type="text" id="fluid-item" placeholder="例如：白開水、湯"></div>
+      <div class="field"><label>毫升數（cc）</label><input type="number" id="fluid-amount" min="0" step="10"></div>
+      <div class="field"><label>備註（選填）</label><input type="text" id="fluid-note"></div>
+      <div class="row" style="justify-content:space-between;margin-top:10px;">
+        <button type="button" class="btn danger" id="fluid-delete-btn" hidden>刪除</button>
+        <div class="row" style="justify-content:flex-end;flex:1;">
+          <button type="button" class="btn secondary" id="fluid-cancel-btn">取消</button>
+          <button type="button" class="btn primary" id="fluid-save-btn">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- Blood pressure modal ---------- -->
+  <div class="modal-backdrop" id="bp-modal" hidden>
+    <div class="modal-sheet">
+      <div class="modal-sheet-header"><h3 id="bp-modal-title">記錄血壓</h3><button class="modal-close-btn" id="bp-close-btn">✕</button></div>
+      <div class="field"><label>時間</label><input type="datetime-local" id="bp-at"></div>
+      <div class="row toggle-row">
+        <label class="type-toggle"><input type="radio" name="bp-context" value="morning"><span>早上</span></label>
+        <label class="type-toggle"><input type="radio" name="bp-context" value="evening"><span>晚上</span></label>
+        <label class="type-toggle"><input type="radio" name="bp-context" value="afterMedication"><span>服藥後1小時</span></label>
+        <label class="type-toggle"><input type="radio" name="bp-context" value="other"><span>其他</span></label>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1;"><label>收縮壓</label><input type="number" id="bp-systolic" min="0" step="1"></div>
+        <div class="field" style="flex:1;"><label>舒張壓</label><input type="number" id="bp-diastolic" min="0" step="1"></div>
+        <div class="field" style="flex:1;"><label>脈搏（選填）</label><input type="number" id="bp-pulse" min="0" step="1"></div>
+      </div>
+      <div class="field"><label>備註（選填）</label><input type="text" id="bp-note"></div>
+      <div class="row" style="justify-content:space-between;margin-top:10px;">
+        <button type="button" class="btn danger" id="bp-delete-btn" hidden>刪除</button>
+        <div class="row" style="justify-content:flex-end;flex:1;">
+          <button type="button" class="btn secondary" id="bp-cancel-btn">取消</button>
+          <button type="button" class="btn primary" id="bp-save-btn">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- Weight modal ---------- -->
+  <div class="modal-backdrop" id="weight-modal" hidden>
+    <div class="modal-sheet">
+      <div class="modal-sheet-header"><h3 id="weight-modal-title">記錄體重</h3><button class="modal-close-btn" id="weight-close-btn">✕</button></div>
+      <div class="field"><label>時間</label><input type="datetime-local" id="weight-at"></div>
+      <div class="field"><label>體重（公斤）</label><input type="number" id="weight-value" min="0" step="0.1"></div>
+      <div class="field"><label>備註（選填）</label><input type="text" id="weight-note"></div>
+      <div class="row" style="justify-content:space-between;margin-top:10px;">
+        <button type="button" class="btn danger" id="weight-delete-btn" hidden>刪除</button>
+        <div class="row" style="justify-content:flex-end;flex:1;">
+          <button type="button" class="btn secondary" id="weight-cancel-btn">取消</button>
+          <button type="button" class="btn primary" id="weight-save-btn">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- Change password modal ---------- -->
+  <div class="modal-backdrop" id="password-modal" hidden>
+    <div class="modal-sheet">
+      <h3>變更密碼</h3>
+      <div class="field"><label>目前密碼</label><input type="password" id="pw-current" autocomplete="current-password"></div>
+      <div class="field"><label>新密碼（至少 6 個字元）</label><input type="password" id="pw-new" autocomplete="new-password"></div>
+      <div class="field"><label>確認新密碼</label><input type="password" id="pw-confirm" autocomplete="new-password"></div>
+      <div class="login-error" id="pw-error"></div>
+      <div class="row" style="justify-content:flex-end;margin-top:10px;">
+        <button class="btn secondary" id="pw-cancel-btn">取消</button>
+        <button class="btn primary" id="pw-save-btn">更新密碼</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="vendor/firebase/firebase-app-compat.js"></script>
+<script src="vendor/firebase/firebase-auth-compat.js"></script>
+<script src="vendor/firebase/firebase-firestore-compat.js"></script>
+<script src="vendor/chartjs/chart.umd.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ===================== Firebase init =====================
+  const firebaseConfig = {
+    projectId: "baobaotakecare",
+    appId: "1:292453432245:web:08910ed59e2ff8fadfb7fc",
+    storageBucket: "baobaotakecare.firebasestorage.app",
+    apiKey: "AIzaSyDl_cknRwdMCWApaxog1KlyDlBmJj5cNqo",
+    authDomain: "baobaotakecare.firebaseapp.com",
+    messagingSenderId: "292453432245"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // ===================== Utilities =====================
+  function pad2(n) { return String(n).padStart(2, "0"); }
+  function nowLocalStr() {
+    const d = new Date();
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  }
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+  function dateKeyOf(localStr) { return (localStr || "").slice(0, 10); }
+  function toDate(localStr) { return localStr ? new Date(localStr) : null; }
+  function fmtTime(localStr) {
+    if (!localStr) return "-";
+    const d = toDate(localStr);
+    return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  }
+  function fmtDateTime(localStr) {
+    if (!localStr) return "-";
+    return localStr.slice(0, 10) + " " + fmtTime(localStr);
+  }
+  function periodKey(dateStr, granularity) {
+    if (!dateStr) return "未知日期";
+    if (granularity === "day") return dateStr;
+    if (granularity === "month") return dateStr.slice(0, 7);
+    const d = new Date(dateStr + "T00:00:00");
+    const tmp = new Date(d.getTime());
+    tmp.setHours(0, 0, 0, 0);
+    tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
+    const week1 = new Date(tmp.getFullYear(), 0, 4);
+    const weekNo = 1 + Math.round(((tmp - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+    return tmp.getFullYear() + "-W" + pad2(weekNo);
+  }
+  function periodLabel(key, granularity) {
+    if (!key || key === "未知日期") return key || "";
+    if (granularity === "day") return key;
+    if (granularity === "month") {
+      const m = key.match(/^(\d{4})-(\d{2})$/);
+      return m ? (m[1] + "年" + m[2] + "月") : key;
+    }
+    const m = key.match(/^(\d{4})-W(\d{2})$/);
+    return m ? (m[1] + "年第" + m[2] + "週") : key;
+  }
+  const BP_CONTEXT_LABEL = { morning: "早上", evening: "晚上", afterMedication: "服藥後1小時", other: "其他" };
+
+  // ===================== App state =====================
+  let fluids = [];
+  let bloodPressures = [];
+  let weights = [];
+  let careProfile = {};
+  let currentPage = "dashboard";
+  let fluidTrendChart = null, bpTrendChart = null, weightTrendChart = null;
+
+  // ===================== Page navigation =====================
+  document.querySelectorAll(".bottom-nav button").forEach(btn => {
+    btn.addEventListener("click", () => showPage(btn.dataset.page));
+  });
+  function showPage(name) {
+    currentPage = name;
+    document.querySelectorAll(".page").forEach(p => p.hidden = (p.id !== "page-" + name));
+    document.querySelectorAll(".bottom-nav button").forEach(b => b.classList.toggle("active", b.dataset.page === name));
+    if (name === "dashboard") renderDashboard();
+    if (name === "records") renderRecordsPage();
+    if (name === "analysis") renderAnalysisPage();
+    if (name === "settings") renderSettingsPage();
+  }
+
+  let modalScrollY = 0;
+  function openModal(el) {
+    modalScrollY = window.scrollY;
+    document.body.classList.add("modal-open");
+    document.body.style.top = "-" + modalScrollY + "px";
+    el.hidden = false;
+  }
+  function closeModal(el) {
+    el.hidden = true;
+    document.body.classList.remove("modal-open");
+    document.body.style.top = "";
+    window.scrollTo(0, modalScrollY);
+  }
+
+  // ===================== Auth =====================
+  document.getElementById("login-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("login-email").value.trim();
+    const pw = document.getElementById("login-password").value;
+    const errEl = document.getElementById("login-error");
+    errEl.textContent = "";
+    auth.signInWithEmailAndPassword(email, pw).catch(err => {
+      errEl.textContent = "登入失敗：" + (err.message || err.code);
+    });
+  });
+  document.getElementById("logout-btn").addEventListener("click", () => auth.signOut());
+  document.getElementById("refresh-btn").addEventListener("click", () => location.reload());
+
+  const pwModal = document.getElementById("password-modal");
+  document.getElementById("change-password-btn").addEventListener("click", () => {
+    document.getElementById("pw-current").value = "";
+    document.getElementById("pw-new").value = "";
+    document.getElementById("pw-confirm").value = "";
+    document.getElementById("pw-error").textContent = "";
+    openModal(pwModal);
+  });
+  document.getElementById("pw-cancel-btn").addEventListener("click", () => closeModal(pwModal));
+  document.getElementById("pw-save-btn").addEventListener("click", () => {
+    const errEl = document.getElementById("pw-error");
+    errEl.textContent = "";
+    const current = document.getElementById("pw-current").value;
+    const next = document.getElementById("pw-new").value;
+    const confirmPw = document.getElementById("pw-confirm").value;
+    if (next.length < 6) { errEl.textContent = "新密碼至少要 6 個字元"; return; }
+    if (next !== confirmPw) { errEl.textContent = "兩次輸入的新密碼不一致"; return; }
+    const user = auth.currentUser;
+    const cred = firebase.auth.EmailAuthProvider.credential(user.email, current);
+    const btn = document.getElementById("pw-save-btn");
+    btn.disabled = true;
+    user.reauthenticateWithCredential(cred)
+      .then(() => user.updatePassword(next))
+      .then(() => { closeModal(pwModal); alert("密碼已更新"); })
+      .catch(err => { errEl.textContent = "更新失敗：" + (err.message || err.code); })
+      .finally(() => { btn.disabled = false; });
+  });
+
+  let unsubFluids = null, unsubBp = null, unsubWeights = null, unsubCareProfile = null;
+  function attachListeners() {
+    unsubFluids = db.collection("fluids").onSnapshot(snap => {
+      fluids = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      fluids.sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+      renderCurrentPage();
+    }, err => console.error("fluids listener error", err));
+    unsubBp = db.collection("bloodPressures").onSnapshot(snap => {
+      bloodPressures = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      bloodPressures.sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+      renderCurrentPage();
+    }, err => console.error("bloodPressures listener error", err));
+    unsubWeights = db.collection("weights").onSnapshot(snap => {
+      weights = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      weights.sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+      renderCurrentPage();
+    }, err => console.error("weights listener error", err));
+    unsubCareProfile = db.collection("settings").doc("careProfile").onSnapshot(doc => {
+      careProfile = doc.exists ? doc.data() : {};
+      renderCurrentPage();
+    }, err => console.error("careProfile listener error", err));
+  }
+  function renderCurrentPage() { showPage(currentPage); }
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById("page-login").hidden = true;
+      document.getElementById("app-shell").hidden = false;
+      document.getElementById("user-email").textContent = user.email;
+      attachListeners();
+    } else {
+      document.getElementById("page-login").hidden = false;
+      document.getElementById("app-shell").hidden = true;
+      if (unsubFluids) unsubFluids();
+      if (unsubBp) unsubBp();
+      if (unsubWeights) unsubWeights();
+      if (unsubCareProfile) unsubCareProfile();
+      fluids = []; bloodPressures = []; weights = []; careProfile = {};
+    }
+  });
+
+  function tile(label, value, deltaEl) {
+    return '<div class="stat-tile"><div class="label">' + label + '</div><div class="value">' + value + "</div>" + (deltaEl || "") + "</div>";
+  }
+
+  function dailyFluidLimit() { return careProfile.dailyFluidLimitMl != null ? careProfile.dailyFluidLimitMl : 700; }
+
+  function renderDashboard() {
+    const limit = dailyFluidLimit();
+    const todaysFluids = fluids.filter(f => dateKeyOf(f.at) === todayKey());
+    const todayMl = todaysFluids.reduce((s, f) => s + (f.amountMl || 0), 0);
+    const pct = limit > 0 ? Math.round((todayMl / limit) * 100) : 0;
+    const over = todayMl > limit;
+    const goalEl = document.getElementById("fluid-goal-content");
+    goalEl.innerHTML =
+      '<div style="font-size:22px;font-weight:700;' + (over ? "color:var(--red);" : "") + '">' + todayMl + ' <span style="font-size:13px;font-weight:400;color:var(--ink-soft);">/ ' + limit + ' cc</span></div>' +
+      '<div class="progress-track" style="margin-top:8px;"><div class="progress-fill' + (over ? " over-limit" : "") + '" style="width:' + Math.min(100, pct) + '%;"></div></div>' +
+      (over ? '<div style="font-size:12px;color:var(--red);font-weight:700;margin-top:4px;">已超標 ' + (todayMl - limit) + ' cc</div>' : '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">' + pct + '%</div>');
+
+    const lastBp = bloodPressures[0];
+    const bpTile = lastBp
+      ? tile("最近血壓", lastBp.systolic + "/" + lastBp.diastolic, '<div class="delta info">' + (BP_CONTEXT_LABEL[lastBp.context] || "") + " · " + fmtDateTime(lastBp.at) + '</div>')
+      : tile("最近血壓", "尚無紀錄", "");
+
+    const todaysWeights = weights.filter(w => dateKeyOf(w.at) === todayKey());
+    const weightTile = todaysWeights.length
+      ? tile("今日體重", todaysWeights[0].weightKg + " kg", "")
+      : tile("今日體重", "尚未量測", "");
+
+    document.getElementById("status-grid").innerHTML = bpTile + weightTile;
+  }
+
+  // ===================== Quick-add: fluid =====================
+  const fluidModal = document.getElementById("fluid-modal");
+  let editingFluidId = null;
+  function openFluidModal(record) {
+    editingFluidId = record ? record.id : null;
+    document.getElementById("fluid-modal-title").textContent = record ? "編輯液體攝取紀錄" : "記錄喝水";
+    document.getElementById("fluid-delete-btn").hidden = !record;
+    document.getElementById("fluid-at").value = record ? record.at : nowLocalStr();
+    document.getElementById("fluid-item").value = record ? (record.item || "") : "";
+    document.getElementById("fluid-amount").value = record && record.amountMl != null ? record.amountMl : "";
+    document.getElementById("fluid-note").value = record ? (record.note || "") : "";
+    openModal(fluidModal);
+  }
+  document.getElementById("quick-fluid-btn").addEventListener("click", () => openFluidModal(null));
+  document.getElementById("fluid-cancel-btn").addEventListener("click", () => closeModal(fluidModal));
+  document.getElementById("fluid-close-btn").addEventListener("click", () => closeModal(fluidModal));
+  document.getElementById("fluid-save-btn").addEventListener("click", () => {
+    const at = document.getElementById("fluid-at").value;
+    if (!at) { alert("請填寫時間"); return; }
+    const amountRaw = parseFloat(document.getElementById("fluid-amount").value);
+    if (isNaN(amountRaw)) { alert("請填寫毫升數"); return; }
+    const data = {
+      at, item: document.getElementById("fluid-item").value.trim(), amountMl: amountRaw,
+      note: document.getElementById("fluid-note").value.trim(),
+      recordedBy: auth.currentUser.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    const ref = editingFluidId ? db.collection("fluids").doc(editingFluidId) : db.collection("fluids").doc();
+    ref.set(data, { merge: true }).then(() => closeModal(fluidModal));
+  });
+  document.getElementById("fluid-delete-btn").addEventListener("click", () => {
+    if (!editingFluidId) return;
+    if (!confirm("確定刪除這筆液體攝取紀錄？")) return;
+    db.collection("fluids").doc(editingFluidId).delete().then(() => closeModal(fluidModal));
+  });
+
+  // ===================== Quick-add: blood pressure =====================
+  const bpModal = document.getElementById("bp-modal");
+  let editingBpId = null;
+  function openBpModal(record) {
+    editingBpId = record ? record.id : null;
+    document.getElementById("bp-modal-title").textContent = record ? "編輯血壓紀錄" : "記錄血壓";
+    document.getElementById("bp-delete-btn").hidden = !record;
+    document.getElementById("bp-at").value = record ? record.at : nowLocalStr();
+    document.querySelectorAll('input[name="bp-context"]').forEach(r => { r.checked = record && r.value === record.context; });
+    document.getElementById("bp-systolic").value = record && record.systolic != null ? record.systolic : "";
+    document.getElementById("bp-diastolic").value = record && record.diastolic != null ? record.diastolic : "";
+    document.getElementById("bp-pulse").value = record && record.pulse != null ? record.pulse : "";
+    document.getElementById("bp-note").value = record ? (record.note || "") : "";
+    openModal(bpModal);
+  }
+  document.getElementById("quick-bp-btn").addEventListener("click", () => openBpModal(null));
+  document.getElementById("bp-cancel-btn").addEventListener("click", () => closeModal(bpModal));
+  document.getElementById("bp-close-btn").addEventListener("click", () => closeModal(bpModal));
+  document.getElementById("bp-save-btn").addEventListener("click", () => {
+    const at = document.getElementById("bp-at").value;
+    if (!at) { alert("請填寫時間"); return; }
+    const contextEl = document.querySelector('input[name="bp-context"]:checked');
+    if (!contextEl) { alert("請選擇早上／晚上／服藥後1小時／其他"); return; }
+    const systolicRaw = parseFloat(document.getElementById("bp-systolic").value);
+    const diastolicRaw = parseFloat(document.getElementById("bp-diastolic").value);
+    if (isNaN(systolicRaw) || isNaN(diastolicRaw)) { alert("請填寫收縮壓與舒張壓"); return; }
+    const pulseRaw = parseFloat(document.getElementById("bp-pulse").value);
+    const data = {
+      at, context: contextEl.value, systolic: systolicRaw, diastolic: diastolicRaw,
+      pulse: isNaN(pulseRaw) ? null : pulseRaw,
+      note: document.getElementById("bp-note").value.trim(),
+      recordedBy: auth.currentUser.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    const ref = editingBpId ? db.collection("bloodPressures").doc(editingBpId) : db.collection("bloodPressures").doc();
+    ref.set(data, { merge: true }).then(() => closeModal(bpModal));
+  });
+  document.getElementById("bp-delete-btn").addEventListener("click", () => {
+    if (!editingBpId) return;
+    if (!confirm("確定刪除這筆血壓紀錄？")) return;
+    db.collection("bloodPressures").doc(editingBpId).delete().then(() => closeModal(bpModal));
+  });
+
+  // ===================== Quick-add: weight =====================
+  const weightModal = document.getElementById("weight-modal");
+  let editingWeightId = null;
+  function openWeightModal(record) {
+    editingWeightId = record ? record.id : null;
+    document.getElementById("weight-modal-title").textContent = record ? "編輯體重紀錄" : "記錄體重";
+    document.getElementById("weight-delete-btn").hidden = !record;
+    document.getElementById("weight-at").value = record ? record.at : nowLocalStr();
+    document.getElementById("weight-value").value = record && record.weightKg != null ? record.weightKg : "";
+    document.getElementById("weight-note").value = record ? (record.note || "") : "";
+    openModal(weightModal);
+  }
+  document.getElementById("quick-weight-btn").addEventListener("click", () => openWeightModal(null));
+  document.getElementById("weight-cancel-btn").addEventListener("click", () => closeModal(weightModal));
+  document.getElementById("weight-close-btn").addEventListener("click", () => closeModal(weightModal));
+  document.getElementById("weight-save-btn").addEventListener("click", () => {
+    const at = document.getElementById("weight-at").value;
+    if (!at) { alert("請填寫時間"); return; }
+    const weightRaw = parseFloat(document.getElementById("weight-value").value);
+    if (isNaN(weightRaw)) { alert("請填寫體重"); return; }
+    const data = {
+      at, weightKg: weightRaw,
+      note: document.getElementById("weight-note").value.trim(),
+      recordedBy: auth.currentUser.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    const ref = editingWeightId ? db.collection("weights").doc(editingWeightId) : db.collection("weights").doc();
+    ref.set(data, { merge: true }).then(() => closeModal(weightModal));
+  });
+  document.getElementById("weight-delete-btn").addEventListener("click", () => {
+    if (!editingWeightId) return;
+    if (!confirm("確定刪除這筆體重紀錄？")) return;
+    db.collection("weights").doc(editingWeightId).delete().then(() => closeModal(weightModal));
+  });
+
+  // ===================== Records page =====================
+  function fluidSummary(f) {
+    return (f.item || "液體") + " " + (f.amountMl != null ? f.amountMl + "cc" : "");
+  }
+  function bpSummary(b) {
+    return b.systolic + "/" + b.diastolic + (b.pulse != null ? "，脈搏 " + b.pulse : "") + "（" + (BP_CONTEXT_LABEL[b.context] || "") + "）";
+  }
+  function weightSummary(w) {
+    return w.weightKg + " kg";
+  }
+
+  function unifiedRecords() {
+    const list = [];
+    fluids.forEach(f => list.push({ kind: "fluid", time: f.at, typeLabel: "液體攝取", summary: fluidSummary(f), note: f.note, recordedBy: f.recordedBy, raw: f }));
+    bloodPressures.forEach(b => list.push({ kind: "bp", time: b.at, typeLabel: "血壓", summary: bpSummary(b), note: b.note, recordedBy: b.recordedBy, raw: b }));
+    weights.forEach(w => list.push({ kind: "weight", time: w.at, typeLabel: "體重", summary: weightSummary(w), note: w.note, recordedBy: w.recordedBy, raw: w }));
+    list.sort((a, b) => (b.time || "").localeCompare(a.time || ""));
+    return list;
+  }
+
+  function openEditModalFor(rec) {
+    if (rec.kind === "fluid") openFluidModal(rec.raw);
+    else if (rec.kind === "bp") openBpModal(rec.raw);
+    else if (rec.kind === "weight") openWeightModal(rec.raw);
+  }
+  function deleteRecord(rec) {
+    if (!confirm("確定刪除這筆紀錄？")) return;
+    const coll = { fluid: "fluids", bp: "bloodPressures", weight: "weights" }[rec.kind];
+    db.collection(coll).doc(rec.raw.id).delete();
+  }
+
+  function renderRecordsPage() {
+    const typeFilter = document.getElementById("filter-type").value;
+    const startFilter = document.getElementById("filter-start").value;
+    const endFilter = document.getElementById("filter-end").value;
+    let list = unifiedRecords();
+    if (typeFilter) list = list.filter(r => r.kind === typeFilter);
+    if (startFilter) list = list.filter(r => dateKeyOf(r.time) >= startFilter);
+    if (endFilter) list = list.filter(r => dateKeyOf(r.time) <= endFilter);
+
+    const tbody = document.querySelector("#records-table tbody");
+    const mobileList = document.getElementById("records-list-mobile");
+    document.getElementById("records-empty-hint").hidden = list.length > 0;
+    tbody.innerHTML = "";
+    mobileList.innerHTML = "";
+
+    list.forEach(rec => {
+      const tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td>" + fmtDateTime(rec.time) + "</td>" +
+        "<td>" + rec.typeLabel + "</td>" +
+        "<td>" + rec.summary + "</td>" +
+        '<td class="note-cell">' + (rec.note || "-") + "</td>" +
+        "<td>" + (rec.recordedBy || "-") + "</td>" +
+        '<td><button class="btn secondary small edit-btn">編輯</button> <button class="btn danger small del-btn">刪除</button></td>';
+      tr.querySelector(".edit-btn").addEventListener("click", () => openEditModalFor(rec));
+      tr.querySelector(".del-btn").addEventListener("click", () => deleteRecord(rec));
+      tbody.appendChild(tr);
+
+      const card = document.createElement("div");
+      card.className = "record-card";
+      card.innerHTML =
+        '<div class="record-card-top"><span class="record-card-time">' + fmtDateTime(rec.time) + " · " + rec.typeLabel + '</span></div>' +
+        '<div class="record-card-summary">' + rec.summary + "</div>" +
+        (rec.note ? '<div class="record-card-note">' + rec.note + "</div>" : "") +
+        '<div class="record-card-actions"><button type="button" class="btn secondary small edit-btn">編輯</button><button type="button" class="btn danger small del-btn">刪除</button></div>';
+      card.querySelector(".edit-btn").addEventListener("click", () => openEditModalFor(rec));
+      card.querySelector(".del-btn").addEventListener("click", () => deleteRecord(rec));
+      mobileList.appendChild(card);
+    });
+  }
+  document.getElementById("filter-type").addEventListener("change", renderRecordsPage);
+  document.getElementById("filter-start").addEventListener("change", renderRecordsPage);
+  document.getElementById("filter-end").addEventListener("change", renderRecordsPage);
+
+  // ===================== Analysis page =====================
+  function computeAnalysisBreakdown(granularity) {
+    const buckets = {};
+    function bucket(key) {
+      if (!buckets[key]) buckets[key] = { fluidMl: 0, systolicSum: 0, diastolicSum: 0, bpCount: 0, weightSum: 0, weightCount: 0 };
+      return buckets[key];
+    }
+    fluids.forEach(f => {
+      const key = periodKey(dateKeyOf(f.at), granularity);
+      if (key === "未知日期") return;
+      bucket(key).fluidMl += (f.amountMl || 0);
+    });
+    bloodPressures.forEach(b => {
+      const key = periodKey(dateKeyOf(b.at), granularity);
+      if (key === "未知日期") return;
+      const bk = bucket(key);
+      bk.systolicSum += (b.systolic || 0); bk.diastolicSum += (b.diastolic || 0); bk.bpCount++;
+    });
+    weights.forEach(w => {
+      const key = periodKey(dateKeyOf(w.at), granularity);
+      if (key === "未知日期") return;
+      const bk = bucket(key);
+      bk.weightSum += (w.weightKg || 0); bk.weightCount++;
+    });
+    const keys = Object.keys(buckets).sort().reverse();
+    if (!keys.length) return null;
+    const periods = keys.map(key => {
+      const b = buckets[key];
+      return {
+        key, label: periodLabel(key, granularity),
+        fluidMl: b.fluidMl,
+        avgSystolic: b.bpCount ? b.systolicSum / b.bpCount : null,
+        avgDiastolic: b.bpCount ? b.diastolicSum / b.bpCount : null,
+        avgWeight: b.weightCount ? b.weightSum / b.weightCount : null
+      };
+    });
+    const n = periods.length;
+    const sumFluid = periods.reduce((s, p) => s + p.fluidMl, 0);
+    const bpPeriods = periods.filter(p => p.avgSystolic !== null);
+    const weightPeriods = periods.filter(p => p.avgWeight !== null);
+    const average = {
+      fluidMl: sumFluid / n,
+      avgSystolic: bpPeriods.length ? bpPeriods.reduce((s, p) => s + p.avgSystolic, 0) / bpPeriods.length : null,
+      avgDiastolic: bpPeriods.length ? bpPeriods.reduce((s, p) => s + p.avgDiastolic, 0) / bpPeriods.length : null,
+      avgWeight: weightPeriods.length ? weightPeriods.reduce((s, p) => s + p.avgWeight, 0) / weightPeriods.length : null
+    };
+    const sum = { fluidMl: sumFluid, avgSystolic: average.avgSystolic, avgDiastolic: average.avgDiastolic, avgWeight: average.avgWeight };
+    return { periods, average, sum };
+  }
+
+  function renderAnalysisPage() {
+    const granularity = document.getElementById("analysis-granularity-select").value;
+    const mode = document.getElementById("analysis-mode-select").value;
+    const result = computeAnalysisBreakdown(granularity);
+    const tbody = document.querySelector("#analysis-table tbody");
+    const foot = document.getElementById("analysis-totals-foot");
+    tbody.innerHTML = ""; foot.innerHTML = "";
+    document.getElementById("analysis-empty-hint").hidden = !!result;
+    renderTrendCharts(granularity);
+    if (!result) return;
+
+    tbody.innerHTML = result.periods.map(p =>
+      "<tr><td>" + p.label + "</td>" +
+      "<td>" + Math.round(p.fluidMl) + "</td>" +
+      "<td>" + (p.avgSystolic === null ? "-" : Math.round(p.avgSystolic) + "/" + Math.round(p.avgDiastolic)) + "</td>" +
+      "<td>" + (p.avgWeight === null ? "-" : p.avgWeight.toFixed(1)) + "</td></tr>"
+    ).join("");
+
+    const agg = mode === "sum" ? result.sum : result.average;
+    const modeLabel = mode === "sum" ? "加總" : "平均";
+    foot.innerHTML = "<tr>" +
+      "<td>" + modeLabel + "（共 " + result.periods.length + " 期）</td>" +
+      "<td>" + Math.round(agg.fluidMl) + "</td>" +
+      "<td>" + (agg.avgSystolic === null ? "-" : Math.round(agg.avgSystolic) + "/" + Math.round(agg.avgDiastolic)) + "</td>" +
+      "<td>" + (agg.avgWeight === null ? "-" : agg.avgWeight.toFixed(1)) + "</td>" +
+    "</tr>";
+  }
+  document.getElementById("analysis-granularity-select").addEventListener("change", renderAnalysisPage);
+  document.getElementById("analysis-mode-select").addEventListener("change", renderAnalysisPage);
+
+  function renderTrendCharts(granularity) {
+    const result = computeAnalysisBreakdown(granularity);
+    const periods = result ? result.periods.slice(0, 14).reverse() : [];
+    const labels = periods.map(p => p.label);
+    const limit = dailyFluidLimit();
+
+    if (fluidTrendChart) fluidTrendChart.destroy();
+    fluidTrendChart = new Chart(document.getElementById("fluid-trend-chart"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label: "液體攝取(cc)", data: periods.map(p => Math.round(p.fluidMl)), borderColor: "#5C8D76", backgroundColor: "#5C8D76", tension: 0.2 },
+          { label: "每日上限", data: periods.map(() => limit), borderColor: "#C0504D", borderDash: [6, 4], pointRadius: 0, fill: false }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+    if (bpTrendChart) bpTrendChart.destroy();
+    bpTrendChart = new Chart(document.getElementById("bp-trend-chart"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label: "收縮壓", data: periods.map(p => p.avgSystolic === null ? null : Math.round(p.avgSystolic)), borderColor: "#4A7FA5", backgroundColor: "#4A7FA5", tension: 0.2 },
+          { label: "舒張壓", data: periods.map(p => p.avgDiastolic === null ? null : Math.round(p.avgDiastolic)), borderColor: "#8FB4CC", backgroundColor: "#8FB4CC", tension: 0.2 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+    if (weightTrendChart) weightTrendChart.destroy();
+    weightTrendChart = new Chart(document.getElementById("weight-trend-chart"), {
+      type: "line",
+      data: { labels, datasets: [{ label: "體重(kg)", data: periods.map(p => p.avgWeight === null ? null : Math.round(p.avgWeight * 10) / 10), borderColor: "#436B56", backgroundColor: "#436B56", tension: 0.2 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+  }
+
+  // ===================== Settings page =====================
+  function renderSettingsPage() {
+    document.getElementById("daily-fluid-limit").value = dailyFluidLimit();
+  }
+  document.getElementById("save-settings-btn").addEventListener("click", () => {
+    const limitRaw = parseFloat(document.getElementById("daily-fluid-limit").value);
+    const dailyFluidLimitMl = isNaN(limitRaw) ? 700 : limitRaw;
+    db.collection("settings").doc("careProfile").set({ dailyFluidLimitMl }, { merge: true }).then(() => {
+      document.getElementById("settings-save-result").textContent = "已儲存";
+      setTimeout(() => { document.getElementById("settings-save-result").textContent = ""; }, 2000);
+    });
+  });
+
+})();
+</script>
+</body>
+</html>
