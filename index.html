@@ -57,6 +57,15 @@
     flex-direction: column;
     position: relative;
   }
+  /* This was the actual bug all along: #app-shell (header+main+bottom-nav)
+     never had flex sizing of its own, so it only ever grew tall enough for
+     its own content — leaving #app's extra min-height as dead space below
+     it, with the position:fixed bottom-nav visually masking where that gap
+     really was. No amount of tuning inside main/.page/.dashboard-fill could
+     ever matter until this container itself was told to fill #app. */
+  #app-shell {
+    flex: 1; display: flex; flex-direction: column; min-height: 0;
+  }
   [hidden] { display: none !important; }
   .mascot-icon { border-radius: 50%; object-fit: cover; vertical-align: middle; display: inline-block; }
   .mascot-icon-lg { width: 84px; height: 84px; margin-bottom: 8px; box-shadow: 0 4px 14px rgba(240,168,196,0.4); }
