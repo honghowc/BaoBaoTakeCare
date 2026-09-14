@@ -197,6 +197,19 @@
 
   .progress-track { background: var(--accent-soft); border-radius: 8px; height: 12px; overflow: hidden; }
 
+  /* Dashboard has only a few cards, so give them more room to breathe rather
+     than leaving a big dead gap above the bottom nav on tall phone screens. */
+  #page-dashboard .card { padding: 22px; margin-bottom: 20px; }
+  #page-dashboard .card h2 { font-size: 15px; margin-bottom: 14px; }
+  #page-dashboard .stat-grid { gap: 14px; margin-bottom: 20px; }
+  #page-dashboard .stat-tile { padding: 20px; }
+  #page-dashboard .stat-tile .label { font-size: 13px; }
+  #page-dashboard .stat-tile .value { font-size: 28px; }
+  #page-dashboard .quick-add-grid { gap: 14px; }
+  #page-dashboard .quick-add-btn { padding: 22px 6px; font-size: 13px; gap: 8px; }
+  #page-dashboard .quick-add-btn .quick-add-icon { font-size: 34px; }
+  #page-dashboard .progress-track { height: 16px; }
+
   .date-nav { display: flex; align-items: center; justify-content: center; gap: 16px; }
   .date-nav-btn {
     border: none; background: var(--accent-soft); color: var(--accent-dark);
@@ -396,8 +409,10 @@
         <div class="page-title">設定</div>
         <div class="card">
           <h2>每日液體攝取上限</h2>
-          <div class="field"><label>上限（毫升 cc）</label><input type="number" id="daily-fluid-limit" min="0" step="10"></div>
-          <button class="btn primary" id="save-settings-btn">儲存</button>
+          <div class="row" style="align-items:flex-end;">
+            <div class="field" style="width:120px;flex:none;"><label>上限（毫升 cc）</label><input type="number" id="daily-fluid-limit" min="0" step="10"></div>
+            <button class="btn primary" id="save-settings-btn">儲存</button>
+          </div>
           <div id="settings-save-result" style="font-size:12px;color:var(--ink-soft);margin-top:6px;"></div>
         </div>
       </div>
@@ -696,9 +711,9 @@
     const over = todayMl > limit;
     const goalEl = document.getElementById("fluid-goal-content");
     goalEl.innerHTML =
-      '<div style="font-size:22px;font-weight:700;' + (over ? "color:var(--red);" : "") + '">' + todayMl + ' <span style="font-size:13px;font-weight:400;color:var(--ink-soft);">/ ' + limit + ' cc</span></div>' +
-      '<div class="progress-track" style="margin-top:8px;"><div class="progress-fill' + (over ? " over-limit" : "") + '" style="width:' + Math.min(100, pct) + '%;"></div></div>' +
-      (over ? '<div style="font-size:12px;color:var(--red);font-weight:700;margin-top:4px;">已超標 ' + (todayMl - limit) + ' cc</div>' : '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">' + pct + '%</div>');
+      '<div style="font-size:34px;font-weight:700;' + (over ? "color:var(--red);" : "") + '">' + todayMl + ' <span style="font-size:15px;font-weight:400;color:var(--ink-soft);">/ ' + limit + ' cc</span></div>' +
+      '<div class="progress-track" style="margin-top:10px;"><div class="progress-fill' + (over ? " over-limit" : "") + '" style="width:' + Math.min(100, pct) + '%;"></div></div>' +
+      (over ? '<div style="font-size:13px;color:var(--red);font-weight:700;margin-top:6px;">已超標 ' + (todayMl - limit) + ' cc</div>' : '<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">' + pct + '%</div>');
 
     const lastBp = bloodPressures[0];
     const bpTile = lastBp
