@@ -3,6 +3,9 @@
   "short_name": "寶子照護",
   "display": "standalone",
   "start_url": ".",
-  "background_color": "#F5F3EC",
-  "theme_color": "#5C8D76"
+  "background_color": "#F2EEFB",
+  "theme_color": "#F0A8C4",
+  "icons": [
+    { "src": "chinchilla.png", "sizes": "800x800", "type": "image/png", "purpose": "any maskable" }
+  ]
 }
