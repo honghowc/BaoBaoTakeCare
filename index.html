@@ -44,12 +44,14 @@
   #app {
     max-width: 1080px;
     margin: 0 auto;
-    /* svh (not dvh) — sized to the viewport with the browser's toolbar fully
-       expanded, i.e. the guaranteed-visible minimum. Using dvh here made the
-       page assume the toolbar's already-collapsed (larger) height on first
-       paint, leaving a gap under the fixed bottom-nav until a scroll forced
-       the browser to recompute and the toolbar actually collapsed. */
+    /* svh/dvh alone weren't reliable on the user's device — the browser's
+       toolbar state at first paint still didn't match reality. Falling back
+       to a JS-measured --vh custom property (set from window.innerHeight,
+       updated on resize/orientation change) is the more defensive fix: it
+       always reflects whatever's ACTUALLY visible right now instead of
+       trusting the CSS viewport unit to have caught up yet. */
     min-height: 100svh;
+    min-height: calc(var(--vh, 1vh) * 100);
     background: transparent;
     display: flex;
     flex-direction: column;
@@ -181,12 +183,16 @@
     .records-list-mobile { display: block; }
   }
 
-  .record-card { border: 1px solid var(--line); border-radius: 16px; padding: 12px; margin-bottom: 8px; }
-  .record-card .record-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .record-card .record-card-time { font-size: 12px; color: var(--ink-soft); }
-  .record-card .record-card-summary { font-size: 13.5px; font-weight: 600; margin-top: 2px; }
-  .record-card .record-card-note { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
-  .record-card .record-card-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .record-card { border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; margin-bottom: 6px; }
+  .record-card .record-card-row { display: flex; align-items: center; gap: 8px; }
+  .record-card .record-card-time { font-size: 12px; color: var(--ink-soft); flex: none; width: 42px; }
+  .record-card .record-card-summary { font-size: 13.5px; font-weight: 600; flex: 1; min-width: 0; }
+  .record-card .record-card-note { font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; padding-left: 50px; }
+  .record-card .record-card-actions { display: flex; gap: 4px; flex: none; }
+  .record-card .record-card-actions button {
+    width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
 
   .empty-hint { color: var(--ink-faint); font-size: 13px; text-align: center; padding: 24px 0; }
   .chart-wrap { position: relative; height: 220px; }
@@ -517,6 +523,18 @@
 <script>
 (function () {
   "use strict";
+
+  // ===================== Viewport height fix (iOS Safari toolbar) =====================
+  // window.innerHeight always reflects whatever's ACTUALLY visible right now,
+  // unlike svh/dvh which weren't updating reliably on some devices. Re-run on
+  // resize (fires when the toolbar collapses/expands during scroll) and
+  // orientation change so #app's min-height never gets stuck stale.
+  function setViewportHeightVar() {
+    document.documentElement.style.setProperty("--vh", window.innerHeight * 0.01 + "px");
+  }
+  setViewportHeightVar();
+  window.addEventListener("resize", setViewportHeightVar);
+  window.addEventListener("orientationchange", setViewportHeightVar);
 
   // ===================== Firebase init =====================
   const firebaseConfig = {
@@ -879,10 +897,15 @@
       const card = document.createElement("div");
       card.className = "record-card";
       card.innerHTML =
-        '<div class="record-card-top"><span class="record-card-time">' + fmtTime(rec.at) + '</span></div>' +
-        '<div class="record-card-summary">' + cardSummary(rec) + "</div>" +
-        (rec.note ? '<div class="record-card-note">' + rec.note + "</div>" : "") +
-        '<div class="record-card-actions"><button type="button" class="btn secondary small edit-btn">編輯</button><button type="button" class="btn danger small del-btn">刪除</button></div>';
+        '<div class="record-card-row">' +
+          '<span class="record-card-time">' + fmtTime(rec.at) + '</span>' +
+          '<span class="record-card-summary">' + cardSummary(rec) + '</span>' +
+          '<div class="record-card-actions">' +
+            '<button type="button" class="btn secondary edit-btn" aria-label="編輯" title="編輯">✎</button>' +
+            '<button type="button" class="btn danger del-btn" aria-label="刪除" title="刪除">✕</button>' +
+          '</div>' +
+        '</div>' +
+        (rec.note ? '<div class="record-card-note">' + rec.note + "</div>" : "");
       card.querySelector(".edit-btn").addEventListener("click", () => openEditModalFor(kind, rec));
       card.querySelector(".del-btn").addEventListener("click", () => deleteRecordOf(kind, rec.id));
       mobileList.appendChild(card);
