@@ -413,7 +413,8 @@
       <div class="row toggle-row">
         <label class="type-toggle"><input type="radio" name="bp-context" value="morning"><span>早上</span></label>
         <label class="type-toggle"><input type="radio" name="bp-context" value="evening"><span>晚上</span></label>
-        <label class="type-toggle"><input type="radio" name="bp-context" value="afterMedication"><span>服藥後1小時</span></label>
+        <label class="type-toggle"><input type="radio" name="bp-context" value="afterMedicationMorning"><span>早上服藥後</span></label>
+        <label class="type-toggle"><input type="radio" name="bp-context" value="afterMedicationAfternoon"><span>下午服藥後</span></label>
         <label class="type-toggle"><input type="radio" name="bp-context" value="other"><span>其他</span></label>
       </div>
       <div class="row">
@@ -530,7 +531,12 @@
     const m = key.match(/^(\d{4})-W(\d{2})$/);
     return m ? (m[1] + "年第" + m[2] + "週") : key;
   }
-  const BP_CONTEXT_LABEL = { morning: "早上", evening: "晚上", afterMedication: "服藥後1小時", other: "其他" };
+  const BP_CONTEXT_LABEL = {
+    morning: "早上", evening: "晚上",
+    afterMedicationMorning: "早上服藥後1小時", afterMedicationAfternoon: "下午服藥後1小時",
+    afterMedication: "服藥後1小時", // legacy value from before the AM/PM split — kept so old records still show a label
+    other: "其他"
+  };
 
   // ===================== App state =====================
   let fluids = [];
