@@ -108,13 +108,21 @@
     font-size: 12px; font-weight: 700; padding: 7px 12px; border-radius: 20px;
   }
 
-  main { flex: 1; overflow-y: auto; padding: 16px 16px 88px; }
+  /* main is itself a flex column now, and each .page is a direct flex-grow
+     child of it (min-height:0 so long pages can still scroll normally) —
+     this fills the available height by direct flex-grow rather than a
+     percentage min-height resolving against a flex-computed ancestor, which
+     turned out not to be reliable on the device this was tested on. */
+  main {
+    flex: 1; overflow-y: auto; padding: 16px 16px 88px;
+    display: flex; flex-direction: column;
+  }
+  .page { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .page-title { font-size: 15px; font-weight: 700; margin: 4px 0 14px; color: var(--ink); }
 
   /* Dashboard/Settings only have a couple of short blocks, which left a large
      dead gap above the bottom nav on tall phones no matter how big the cards
      themselves got. Spread/center them to actually use the available height. */
-  #page-dashboard, #page-settings { display: flex; flex-direction: column; min-height: 100%; }
   #page-dashboard .dashboard-fill, #page-settings .dashboard-fill {
     flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;
   }
