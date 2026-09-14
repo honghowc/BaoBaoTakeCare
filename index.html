@@ -196,6 +196,20 @@
   .quick-add-btn:nth-child(2) { background: var(--blue-soft); color: #2C5A78; }
 
   .progress-track { background: var(--accent-soft); border-radius: 8px; height: 12px; overflow: hidden; }
+
+  .date-nav { display: flex; align-items: center; justify-content: center; gap: 16px; }
+  .date-nav-btn {
+    border: none; background: var(--accent-soft); color: var(--accent-dark);
+    width: 40px; height: 40px; border-radius: 50%; font-size: 20px; font-weight: 700; line-height: 1;
+    display: flex; align-items: center; justify-content: center; flex: none;
+  }
+  .date-nav-btn:active { background: var(--accent); color: #fff; }
+  .date-nav-center { text-align: center; }
+  .date-nav-center input[type="date"] {
+    border: none; background: transparent; height: auto; padding: 4px 6px;
+    font-size: 18px; font-weight: 700; color: var(--ink); text-align: center;
+  }
+  .date-nav-weekday { font-size: 12px; color: var(--ink-soft); margin-top: -2px; }
   .progress-fill { background: var(--accent); height: 100%; }
   .progress-fill.over-limit { background: var(--red); }
 
@@ -282,7 +296,17 @@
       <div class="page" id="page-records" hidden>
         <div class="page-title">記錄</div>
         <div class="card">
-          <div class="field" style="max-width:200px;"><label>日期</label><input type="date" id="filter-date"></div>
+          <div class="date-nav">
+            <button type="button" class="date-nav-btn" id="date-prev-btn" aria-label="前一天">‹</button>
+            <div class="date-nav-center">
+              <input type="date" id="filter-date">
+              <div class="date-nav-weekday" id="date-nav-weekday"></div>
+            </div>
+            <button type="button" class="date-nav-btn" id="date-next-btn" aria-label="後一天">›</button>
+          </div>
+          <div class="row" style="justify-content:center;margin-top:6px;">
+            <button type="button" class="btn secondary small" id="date-today-btn" hidden>回到今天</button>
+          </div>
         </div>
 
         <div class="card">
@@ -844,8 +868,29 @@
     });
   }
 
+  const WEEKDAY_LABEL = ["日", "一", "二", "三", "四", "五", "六"];
+  function updateDateNavDisplay(dateFilter) {
+    const d = new Date(dateFilter + "T00:00:00");
+    document.getElementById("date-nav-weekday").textContent = "星期" + WEEKDAY_LABEL[d.getDay()];
+    document.getElementById("date-today-btn").hidden = (dateFilter === todayKey());
+  }
+  function shiftFilterDate(deltaDays) {
+    const input = document.getElementById("filter-date");
+    const d = new Date((input.value || todayKey()) + "T00:00:00");
+    d.setDate(d.getDate() + deltaDays);
+    input.value = d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+    renderRecordsPage();
+  }
+  document.getElementById("date-prev-btn").addEventListener("click", () => shiftFilterDate(-1));
+  document.getElementById("date-next-btn").addEventListener("click", () => shiftFilterDate(1));
+  document.getElementById("date-today-btn").addEventListener("click", () => {
+    document.getElementById("filter-date").value = todayKey();
+    renderRecordsPage();
+  });
+
   function renderRecordsPage() {
     const dateFilter = document.getElementById("filter-date").value || todayKey();
+    updateDateNavDisplay(dateFilter);
 
     renderRecordSection("fluid", fluids.filter(f => dateKeyOf(f.at) === dateFilter),
       "#fluid-records-table", "fluid-records-list-mobile", "fluid-records-empty-hint",
