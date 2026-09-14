@@ -120,13 +120,16 @@
   .page { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .page-title { font-size: 15px; font-weight: 700; margin: 4px 0 14px; color: var(--ink); }
 
-  /* Dashboard/Settings only have a couple of short blocks, which left a large
+  /* Dashboard has a fixed, predictable set of 3 blocks, which left a large
      dead gap above the bottom nav on tall phones no matter how big the cards
-     themselves got. Spread/center them to actually use the available height. */
-  #page-dashboard .dashboard-fill, #page-settings .dashboard-fill {
+     themselves got — spread them out to use the available height. Settings
+     doesn't get this treatment: its content varies (however many tags exist),
+     and stretching just 2 cards to the screen's top/bottom edges left an even
+     worse gap sitting between them instead. */
+  #page-dashboard .dashboard-fill {
     flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;
   }
-  #page-dashboard .dashboard-fill > *, #page-settings .dashboard-fill > * { margin-bottom: 0; }
+  #page-dashboard .dashboard-fill > * { margin-bottom: 0; }
 
   .bottom-nav {
     position: fixed; left: 50%; transform: translateX(-50%);
@@ -453,26 +456,24 @@
       <!-- ---------- Settings ---------- -->
       <div class="page" id="page-settings" hidden>
         <div class="page-title">設定</div>
-        <div class="dashboard-fill">
-          <div class="card">
-            <h2>每日液體攝取上限</h2>
-            <div class="row" style="align-items:flex-end;">
-              <div class="field" style="width:120px;flex:none;"><label>上限（毫升 cc）</label><input type="number" id="daily-fluid-limit" min="0" step="10"></div>
-              <button class="btn primary" id="save-settings-btn">儲存</button>
-            </div>
-            <div id="settings-save-result" style="font-size:12px;color:var(--ink-soft);margin-top:6px;"></div>
+        <div class="card">
+          <h2>每日液體攝取上限</h2>
+          <div class="row" style="align-items:flex-end;">
+            <div class="field" style="width:120px;flex:none;"><label>上限（毫升 cc）</label><input type="number" id="daily-fluid-limit" min="0" step="10"></div>
+            <button class="btn primary" id="save-settings-btn">儲存</button>
           </div>
+          <div id="settings-save-result" style="font-size:12px;color:var(--ink-soft);margin-top:6px;"></div>
+        </div>
 
-          <div class="card">
-            <h2>液體攝取項目標籤</h2>
-            <p style="font-size:11.5px;color:var(--ink-soft);margin:-6px 0 10px;">維護常喝的液體項目，之後記錄喝水時可以快速點選帶入，不用每次手打。</p>
-            <div id="fluid-item-tags" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
-            <form id="add-fluid-item-tag-form" class="row">
-              <input type="text" id="new-fluid-item-tag-input" placeholder="新增項目名稱，例如：湯"
-                style="flex:1;min-width:140px;height:37px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;font-size:13px;color:var(--ink);">
-              <button type="submit" class="btn primary small">新增標籤</button>
-            </form>
-          </div>
+        <div class="card">
+          <h2>液體攝取項目標籤</h2>
+          <p style="font-size:11.5px;color:var(--ink-soft);margin:-6px 0 10px;">維護常喝的液體項目，之後記錄喝水時可以快速點選帶入，不用每次手打。</p>
+          <div id="fluid-item-tags" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+          <form id="add-fluid-item-tag-form" class="row">
+            <input type="text" id="new-fluid-item-tag-input" placeholder="新增項目名稱，例如：湯"
+              style="flex:1;min-width:140px;height:37px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;font-size:13px;color:var(--ink);">
+            <button type="submit" class="btn primary small">新增標籤</button>
+          </form>
         </div>
       </div>
     </main>
