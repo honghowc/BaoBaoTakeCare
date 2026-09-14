@@ -275,26 +275,43 @@
       <div class="page" id="page-records" hidden>
         <div class="page-title">記錄</div>
         <div class="card">
-          <div class="row" style="margin-bottom:10px;">
-            <div class="field"><label>類型</label>
-              <select id="filter-type">
-                <option value="">全部</option>
-                <option value="fluid">液體攝取</option>
-                <option value="bp">血壓</option>
-                <option value="weight">體重</option>
-              </select>
-            </div>
-            <div class="field"><label>開始日期</label><input type="date" id="filter-start"></div>
-            <div class="field"><label>結束日期</label><input type="date" id="filter-end"></div>
-          </div>
+          <div class="field" style="max-width:200px;"><label>日期</label><input type="date" id="filter-date"></div>
+        </div>
+
+        <div class="card">
+          <h2>液體攝取</h2>
           <div class="table-scroll records-list-desktop">
-            <table class="data-table" id="records-table">
-              <thead><tr><th>時間</th><th>類型</th><th>內容</th><th>備註</th><th>紀錄人</th><th></th></tr></thead>
+            <table class="data-table" id="fluid-records-table">
+              <thead><tr><th>時間</th><th>內容</th><th>毫升(cc)</th><th>備註</th><th>紀錄人</th><th></th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
-          <div id="records-list-mobile" class="records-list-mobile"></div>
-          <div class="empty-hint" id="records-empty-hint" hidden>目前篩選條件下沒有任何紀錄。</div>
+          <div id="fluid-records-list-mobile" class="records-list-mobile"></div>
+          <div class="empty-hint" id="fluid-records-empty-hint" hidden>這天沒有液體攝取紀錄。</div>
+        </div>
+
+        <div class="card">
+          <h2>血壓</h2>
+          <div class="table-scroll records-list-desktop">
+            <table class="data-table" id="bp-records-table">
+              <thead><tr><th>時間</th><th>情境</th><th>收縮/舒張</th><th>脈搏</th><th>備註</th><th>紀錄人</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="bp-records-list-mobile" class="records-list-mobile"></div>
+          <div class="empty-hint" id="bp-records-empty-hint" hidden>這天沒有血壓紀錄。</div>
+        </div>
+
+        <div class="card">
+          <h2>體重</h2>
+          <div class="table-scroll records-list-desktop">
+            <table class="data-table" id="weight-records-table">
+              <thead><tr><th>時間</th><th>體重(kg)</th><th>備註</th><th>紀錄人</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="weight-records-list-mobile" class="records-list-mobile"></div>
+          <div class="empty-hint" id="weight-records-empty-hint" hidden>這天沒有體重紀錄。</div>
         </div>
       </div>
 
@@ -770,79 +787,69 @@
   });
 
   // ===================== Records page =====================
-  function fluidSummary(f) {
-    return (f.item || "液體") + " " + (f.amountMl != null ? f.amountMl + "cc" : "");
-  }
-  function bpSummary(b) {
-    return b.systolic + "/" + b.diastolic + (b.pulse != null ? "，脈搏 " + b.pulse : "") + "（" + (BP_CONTEXT_LABEL[b.context] || "") + "）";
-  }
-  function weightSummary(w) {
-    return w.weightKg + " kg";
-  }
+  // One shared date filter (defaults to today) drives three independent
+  // sections — 液體攝取/血壓/體重 no longer share one merged list, so there's
+  // no "類型" filter to pick from anymore.
+  document.getElementById("filter-date").value = todayKey();
 
-  function unifiedRecords() {
-    const list = [];
-    fluids.forEach(f => list.push({ kind: "fluid", time: f.at, typeLabel: "液體攝取", summary: fluidSummary(f), note: f.note, recordedBy: f.recordedBy, raw: f }));
-    bloodPressures.forEach(b => list.push({ kind: "bp", time: b.at, typeLabel: "血壓", summary: bpSummary(b), note: b.note, recordedBy: b.recordedBy, raw: b }));
-    weights.forEach(w => list.push({ kind: "weight", time: w.at, typeLabel: "體重", summary: weightSummary(w), note: w.note, recordedBy: w.recordedBy, raw: w }));
-    list.sort((a, b) => (b.time || "").localeCompare(a.time || ""));
-    return list;
+  function openEditModalFor(kind, raw) {
+    if (kind === "fluid") openFluidModal(raw);
+    else if (kind === "bp") openBpModal(raw);
+    else if (kind === "weight") openWeightModal(raw);
   }
-
-  function openEditModalFor(rec) {
-    if (rec.kind === "fluid") openFluidModal(rec.raw);
-    else if (rec.kind === "bp") openBpModal(rec.raw);
-    else if (rec.kind === "weight") openWeightModal(rec.raw);
-  }
-  function deleteRecord(rec) {
+  function deleteRecordOf(kind, id) {
     if (!confirm("確定刪除這筆紀錄？")) return;
-    const coll = { fluid: "fluids", bp: "bloodPressures", weight: "weights" }[rec.kind];
-    db.collection(coll).doc(rec.raw.id).delete();
+    const coll = { fluid: "fluids", bp: "bloodPressures", weight: "weights" }[kind];
+    db.collection(coll).doc(id).delete();
   }
 
-  function renderRecordsPage() {
-    const typeFilter = document.getElementById("filter-type").value;
-    const startFilter = document.getElementById("filter-start").value;
-    const endFilter = document.getElementById("filter-end").value;
-    let list = unifiedRecords();
-    if (typeFilter) list = list.filter(r => r.kind === typeFilter);
-    if (startFilter) list = list.filter(r => dateKeyOf(r.time) >= startFilter);
-    if (endFilter) list = list.filter(r => dateKeyOf(r.time) <= endFilter);
-
-    const tbody = document.querySelector("#records-table tbody");
-    const mobileList = document.getElementById("records-list-mobile");
-    document.getElementById("records-empty-hint").hidden = list.length > 0;
+  function renderRecordSection(kind, records, tableSelector, mobileListId, emptyHintId, rowCellsHtml, cardSummary) {
+    const tbody = document.querySelector(tableSelector + " tbody");
+    const mobileList = document.getElementById(mobileListId);
+    document.getElementById(emptyHintId).hidden = records.length > 0;
     tbody.innerHTML = "";
     mobileList.innerHTML = "";
 
-    list.forEach(rec => {
+    records.forEach(rec => {
       const tr = document.createElement("tr");
-      tr.innerHTML =
-        "<td>" + fmtDateTime(rec.time) + "</td>" +
-        "<td>" + rec.typeLabel + "</td>" +
-        "<td>" + rec.summary + "</td>" +
-        '<td class="note-cell">' + (rec.note || "-") + "</td>" +
-        "<td>" + (rec.recordedBy || "-") + "</td>" +
+      tr.innerHTML = rowCellsHtml(rec) +
         '<td><button class="btn secondary small edit-btn">編輯</button> <button class="btn danger small del-btn">刪除</button></td>';
-      tr.querySelector(".edit-btn").addEventListener("click", () => openEditModalFor(rec));
-      tr.querySelector(".del-btn").addEventListener("click", () => deleteRecord(rec));
+      tr.querySelector(".edit-btn").addEventListener("click", () => openEditModalFor(kind, rec));
+      tr.querySelector(".del-btn").addEventListener("click", () => deleteRecordOf(kind, rec.id));
       tbody.appendChild(tr);
 
       const card = document.createElement("div");
       card.className = "record-card";
       card.innerHTML =
-        '<div class="record-card-top"><span class="record-card-time">' + fmtDateTime(rec.time) + " · " + rec.typeLabel + '</span></div>' +
-        '<div class="record-card-summary">' + rec.summary + "</div>" +
+        '<div class="record-card-top"><span class="record-card-time">' + fmtTime(rec.at) + '</span></div>' +
+        '<div class="record-card-summary">' + cardSummary(rec) + "</div>" +
         (rec.note ? '<div class="record-card-note">' + rec.note + "</div>" : "") +
         '<div class="record-card-actions"><button type="button" class="btn secondary small edit-btn">編輯</button><button type="button" class="btn danger small del-btn">刪除</button></div>';
-      card.querySelector(".edit-btn").addEventListener("click", () => openEditModalFor(rec));
-      card.querySelector(".del-btn").addEventListener("click", () => deleteRecord(rec));
+      card.querySelector(".edit-btn").addEventListener("click", () => openEditModalFor(kind, rec));
+      card.querySelector(".del-btn").addEventListener("click", () => deleteRecordOf(kind, rec.id));
       mobileList.appendChild(card);
     });
   }
-  document.getElementById("filter-type").addEventListener("change", renderRecordsPage);
-  document.getElementById("filter-start").addEventListener("change", renderRecordsPage);
-  document.getElementById("filter-end").addEventListener("change", renderRecordsPage);
+
+  function renderRecordsPage() {
+    const dateFilter = document.getElementById("filter-date").value || todayKey();
+
+    renderRecordSection("fluid", fluids.filter(f => dateKeyOf(f.at) === dateFilter),
+      "#fluid-records-table", "fluid-records-list-mobile", "fluid-records-empty-hint",
+      f => "<td>" + fmtTime(f.at) + "</td><td>" + (f.item || "-") + "</td><td>" + (f.amountMl != null ? f.amountMl : "-") + '</td><td class="note-cell">' + (f.note || "-") + "</td><td>" + (f.recordedBy || "-") + "</td>",
+      f => (f.item || "液體") + " " + (f.amountMl != null ? f.amountMl + "cc" : ""));
+
+    renderRecordSection("bp", bloodPressures.filter(b => dateKeyOf(b.at) === dateFilter),
+      "#bp-records-table", "bp-records-list-mobile", "bp-records-empty-hint",
+      b => "<td>" + fmtTime(b.at) + "</td><td>" + (BP_CONTEXT_LABEL[b.context] || "-") + "</td><td>" + b.systolic + "/" + b.diastolic + "</td><td>" + (b.pulse != null ? b.pulse : "-") + '</td><td class="note-cell">' + (b.note || "-") + "</td><td>" + (b.recordedBy || "-") + "</td>",
+      b => b.systolic + "/" + b.diastolic + (b.pulse != null ? "，脈搏 " + b.pulse : "") + "（" + (BP_CONTEXT_LABEL[b.context] || "") + "）");
+
+    renderRecordSection("weight", weights.filter(w => dateKeyOf(w.at) === dateFilter),
+      "#weight-records-table", "weight-records-list-mobile", "weight-records-empty-hint",
+      w => "<td>" + fmtTime(w.at) + "</td><td>" + w.weightKg + '</td><td class="note-cell">' + (w.note || "-") + "</td><td>" + (w.recordedBy || "-") + "</td>",
+      w => w.weightKg + " kg");
+  }
+  document.getElementById("filter-date").addEventListener("change", renderRecordsPage);
 
   // ===================== Analysis page =====================
   function computeAnalysisBreakdown(granularity) {
