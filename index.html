@@ -736,7 +736,9 @@
     goalEl.innerHTML =
       '<div style="font-size:34px;font-weight:700;' + (over ? "color:var(--red);" : "") + '">' + todayMl + ' <span style="font-size:15px;font-weight:400;color:var(--ink-soft);">/ ' + limit + ' cc</span></div>' +
       '<div class="progress-track" style="margin-top:10px;"><div class="progress-fill' + (over ? " over-limit" : "") + '" style="width:' + Math.min(100, pct) + '%;"></div></div>' +
-      (over ? '<div style="font-size:13px;color:var(--red);font-weight:700;margin-top:6px;">已超標 ' + (todayMl - limit) + ' cc</div>' : '<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">' + pct + '%</div>');
+      (over
+        ? '<div style="font-size:13px;color:var(--red);font-weight:700;margin-top:6px;">已超標 ' + (todayMl - limit) + ' cc</div>'
+        : '<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">' + pct + '% · 還剩 ' + (limit - todayMl) + ' cc</div>');
 
     const lastBp = bloodPressures[0];
     const bpTile = lastBp
