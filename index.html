@@ -136,7 +136,7 @@
      and stretching just 2 cards to the screen's top/bottom edges left an even
      worse gap sitting between them instead. */
   #page-dashboard .dashboard-fill {
-    flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;
+    flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 28px;
   }
   #page-dashboard .dashboard-fill > * { margin-bottom: 0; }
 
@@ -261,18 +261,20 @@
 
   .progress-track { background: var(--accent-soft); border-radius: 8px; height: 12px; overflow: hidden; }
 
-  /* Dashboard has only a few cards, so give them more room to breathe rather
-     than leaving a big dead gap above the bottom nav on tall phone screens. */
-  #page-dashboard .card { padding: 22px; margin-bottom: 20px; }
-  #page-dashboard .card h2 { font-size: 15px; margin-bottom: 14px; }
-  #page-dashboard .stat-grid { gap: 14px; margin-bottom: 20px; }
-  #page-dashboard .stat-tile { padding: 20px; }
-  #page-dashboard .stat-tile .label { font-size: 13px; }
-  #page-dashboard .stat-tile .value { font-size: 28px; }
-  #page-dashboard .quick-add-grid { gap: 14px; }
-  #page-dashboard .quick-add-btn { padding: 22px 6px; font-size: 13px; gap: 8px; }
-  #page-dashboard .quick-add-btn .quick-add-icon { font-size: 34px; }
-  #page-dashboard .progress-track { height: 16px; }
+  /* Dashboard has only a few cards, so give them a LOT more room to breathe
+     rather than leaving a big dead gap above the bottom nav on tall phone
+     screens — the earlier, more modest sizing pass wasn't enough on the
+     device this was tested on. */
+  #page-dashboard .card { padding: 32px; margin-bottom: 0; }
+  #page-dashboard .card h2 { font-size: 17px; margin-bottom: 18px; }
+  #page-dashboard .stat-grid { gap: 16px; margin-bottom: 0; }
+  #page-dashboard .stat-tile { padding: 28px 20px; }
+  #page-dashboard .stat-tile .label { font-size: 14px; }
+  #page-dashboard .stat-tile .value { font-size: 36px; }
+  #page-dashboard .quick-add-grid { gap: 18px; }
+  #page-dashboard .quick-add-btn { padding: 32px 6px; font-size: 14px; gap: 10px; }
+  #page-dashboard .quick-add-btn .quick-add-icon { font-size: 42px; }
+  #page-dashboard .progress-track { height: 20px; }
 
   .date-nav { display: flex; align-items: center; justify-content: center; gap: 16px; }
   .date-nav-btn {
@@ -808,11 +810,11 @@
     const over = todayMl > limit;
     const goalEl = document.getElementById("fluid-goal-content");
     goalEl.innerHTML =
-      '<div style="font-size:34px;font-weight:700;' + (over ? "color:var(--red);" : "") + '">' + todayMl + ' <span style="font-size:15px;font-weight:400;color:var(--ink-soft);">/ ' + limit + ' cc</span></div>' +
-      '<div class="progress-track" style="margin-top:10px;"><div class="progress-fill' + (over ? " over-limit" : "") + '" style="width:' + Math.min(100, pct) + '%;"></div></div>' +
+      '<div style="font-size:44px;font-weight:700;' + (over ? "color:var(--red);" : "") + '">' + todayMl + ' <span style="font-size:17px;font-weight:400;color:var(--ink-soft);">/ ' + limit + ' cc</span></div>' +
+      '<div class="progress-track" style="margin-top:14px;"><div class="progress-fill' + (over ? " over-limit" : "") + '" style="width:' + Math.min(100, pct) + '%;"></div></div>' +
       (over
-        ? '<div style="font-size:13px;color:var(--red);font-weight:700;margin-top:6px;">已超標 ' + (todayMl - limit) + ' cc</div>'
-        : '<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">' + pct + '% · 還剩 ' + (limit - todayMl) + ' cc</div>');
+        ? '<div style="font-size:14px;color:var(--red);font-weight:700;margin-top:10px;">已超標 ' + (todayMl - limit) + ' cc</div>'
+        : '<div style="font-size:13px;color:var(--ink-soft);margin-top:10px;">' + pct + '% · 還剩 ' + (limit - todayMl) + ' cc</div>');
 
     const lastBp = bloodPressures[0];
     const bpTile = lastBp
