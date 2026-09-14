@@ -111,6 +111,15 @@
   main { flex: 1; overflow-y: auto; padding: 16px 16px 88px; }
   .page-title { font-size: 15px; font-weight: 700; margin: 4px 0 14px; color: var(--ink); }
 
+  /* Dashboard only has 3 short blocks, which left a large dead gap above the
+     bottom nav on tall phones no matter how big the cards themselves got.
+     Spread them out to actually use the full available height instead. */
+  #page-dashboard { display: flex; flex-direction: column; min-height: 100%; }
+  #page-dashboard .dashboard-fill {
+    flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;
+  }
+  #page-dashboard .dashboard-fill > * { margin-bottom: 0; }
+
   .bottom-nav {
     position: fixed; left: 50%; transform: translateX(-50%);
     bottom: 0; width: 100%; max-width: 1080px;
@@ -299,19 +308,21 @@
       <div class="page" id="page-dashboard">
         <div class="page-title">儀表板</div>
 
-        <div class="card">
-          <h2>今日總攝水量</h2>
-          <div id="fluid-goal-content"></div>
-        </div>
+        <div class="dashboard-fill">
+          <div class="card">
+            <h2>今日總攝水量</h2>
+            <div id="fluid-goal-content"></div>
+          </div>
 
-        <div class="stat-grid" id="status-grid"></div>
+          <div class="stat-grid" id="status-grid"></div>
 
-        <div class="card">
-          <h2>快速記錄</h2>
-          <div class="quick-add-grid">
-            <button class="quick-add-btn" id="quick-fluid-btn"><span class="quick-add-icon">💧</span><span>喝水</span></button>
-            <button class="quick-add-btn" id="quick-bp-btn"><span class="quick-add-icon">🩺</span><span>血壓</span></button>
-            <button class="quick-add-btn" id="quick-weight-btn"><span class="quick-add-icon">⚖️</span><span>體重</span></button>
+          <div class="card">
+            <h2>快速記錄</h2>
+            <div class="quick-add-grid">
+              <button class="quick-add-btn" id="quick-fluid-btn"><span class="quick-add-icon">💧</span><span>喝水</span></button>
+              <button class="quick-add-btn" id="quick-bp-btn"><span class="quick-add-icon">🩺</span><span>血壓</span></button>
+              <button class="quick-add-btn" id="quick-weight-btn"><span class="quick-add-icon">⚖️</span><span>體重</span></button>
+            </div>
           </div>
         </div>
       </div>
