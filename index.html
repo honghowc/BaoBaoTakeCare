@@ -437,8 +437,7 @@
       <div class="row toggle-row">
         <label class="type-toggle"><input type="radio" name="bp-context" value="morning"><span>早上</span></label>
         <label class="type-toggle"><input type="radio" name="bp-context" value="evening"><span>晚上</span></label>
-        <label class="type-toggle"><input type="radio" name="bp-context" value="afterMedicationMorning"><span>早上服藥後</span></label>
-        <label class="type-toggle"><input type="radio" name="bp-context" value="afterMedicationAfternoon"><span>下午服藥後</span></label>
+        <label class="type-toggle"><input type="radio" name="bp-context" value="afterMedicationMorning"><span>早上服藥後1小時</span></label>
         <label class="type-toggle"><input type="radio" name="bp-context" value="other"><span>其他</span></label>
       </div>
       <div class="row">
@@ -557,8 +556,10 @@
   }
   const BP_CONTEXT_LABEL = {
     morning: "早上", evening: "晚上",
-    afterMedicationMorning: "早上服藥後1小時", afterMedicationAfternoon: "下午服藥後1小時",
-    afterMedication: "服藥後1小時", // legacy value from before the AM/PM split — kept so old records still show a label
+    afterMedicationMorning: "早上服藥後1小時",
+    // Legacy values from a brief earlier design (before settling on morning-only
+    // medication) — kept so any record already saved with them still shows a label.
+    afterMedicationAfternoon: "下午服藥後1小時", afterMedication: "服藥後1小時",
     other: "其他"
   };
 
