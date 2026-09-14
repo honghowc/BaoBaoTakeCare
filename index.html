@@ -195,6 +195,14 @@
   }
   .type-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
   .type-toggle:has(input:checked) { background: var(--accent); color: #fff; }
+  /* "早上服藥後1小時" is much longer than the other 3 labels — at equal
+     flex:1 width in one row it wrapped to 2 lines while the others stayed
+     on 1, making the buttons look mismatched in size. A 2x2 grid gives every
+     button the same fixed box instead. */
+  #bp-context-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  #bp-context-grid .type-toggle { height: 46px; white-space: nowrap; }
 
   .tag-chip {
     display: inline-flex; align-items: center; gap: 6px;
@@ -519,7 +527,7 @@
     <div class="modal-sheet">
       <div class="modal-sheet-header"><h3 id="bp-modal-title">記錄血壓</h3><button class="modal-close-btn" id="bp-close-btn">✕</button></div>
       <div class="field"><label>時間</label><input type="datetime-local" id="bp-at"></div>
-      <div class="row toggle-row">
+      <div class="row toggle-row" id="bp-context-grid">
         <label class="type-toggle"><input type="radio" name="bp-context" value="morning"><span>早上</span></label>
         <label class="type-toggle"><input type="radio" name="bp-context" value="afterMedicationMorning"><span>早上服藥後1小時</span></label>
         <label class="type-toggle"><input type="radio" name="bp-context" value="evening"><span>晚上</span></label>
